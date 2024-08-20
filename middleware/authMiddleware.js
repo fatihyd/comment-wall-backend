@@ -1,4 +1,4 @@
-const jwt = require("jsonwebtoken");
+const { verifyJWT } = require("../utils/authUtils");
 const User = require("../models/User");
 
 /*
@@ -18,7 +18,7 @@ const authMiddleware = async (req, res, next) => {
   }
 
   // Check if token is valid
-  const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+  const decodedToken = verifyJWT(token);
   if (!decodedToken.userID) {
     return res.status(401).json({ error: "token invalid" });
   }

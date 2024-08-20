@@ -1,5 +1,8 @@
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
+const {
+  generateJWT,
+  hashPassword,
+  comparePasswords,
+} = require("../utils/authUtils");
 const User = require("../models/User");
 
 exports.signup = async (req, res) => {
@@ -12,8 +15,7 @@ exports.signup = async (req, res) => {
     }
 
     // Hash the user's password
-    const SALT_ROUNDS = 10;
-    const hashedPassword = await bcrypt.hash(req.body.password, SALT_ROUNDS);
+    const hashedPassword = await hashPassword(req.body.password);
 
     // Create a new user object with the provided username and hashed password
     const user = new User({
@@ -46,7 +48,7 @@ exports.login = async (req, res) => {
     }
 
     // Compare the provided password with the stored hashed password
-    const passwordMatch = await bcrypt.compare(
+    const passwordMatch = await comparePasswords(
       req.body.password,
       user.password
     );
@@ -55,16 +57,8 @@ exports.login = async (req, res) => {
       return res.status(401).json({ message: "Invalid password!" });
     }
 
-    // Define the JWT payload with the user's ID (used for identifying the user in subsequent requests)
-    /*
-        Will be used in the authMiddleware
-        to identify and attach the user object to incoming requests
-    */
-    const PAYLOAD = { userID: user._id };
-    // Sign a JWT token (used for authenticating subsequent requests)
-    const token = jwt.sign(PAYLOAD, process.env.JWT_SECRET, {
-      expiresIn: "1h",
-    });
+    // Generate a signed JWT for the authenticated user using their unique ID
+    const token = generateJWT(user._id);
 
     // Return the token and username in the response
     // The token should be stored by the client (e.g., in localStorage) and sent with subsequent API requests
